@@ -124,9 +124,8 @@ class RPDsApp:
             ft.OutlinedButton("Templates", icon=ft.Icons.DASHBOARD, on_click=self.manage_templates, expand=True),
         ])
 
-        def open_drawer(e):
-            self.page.show_drawer()
-            self.page.update()
+        async def open_drawer(e):
+            await self.page.show_drawer()
 
         return ft.Column([
             ft.Row([
