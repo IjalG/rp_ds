@@ -47,10 +47,9 @@ class RPDsApp:
             padding=10,
             content=ft.Column([
                 ft.Text("Analysis", weight=ft.FontWeight.BOLD, size=14),
-                ft.Container(expand=True, content=ft.Column([], scroll=ft.ScrollMode.AUTO), id="think_content"),
+                ft.Container(expand=True, content=ft.Column([], scroll=ft.ScrollMode.AUTO)),
             ]),
         )
-        self._think_col = None
 
         self.build_layout()
         self.refresh_conv_list()
@@ -138,14 +137,19 @@ class RPDsApp:
         chain = get_active_branch(self.current_conv.id)
         self.messages = chain
         self.msg_list_view.controls.clear()
+        last_think = ""
         for m in chain:
             self.msg_list_view.controls.append(self._build_msg_widget(m))
-        # think panel visibility
+            if m.role == "assistant" and m.think_content:
+                last_think = m.think_content
+        # think panel
         show_think = self.current_conv.mode == "no_inner_os"
         self.think_panel.visible = show_think
         if show_think:
-            self._think_col = self.think_panel.content.content[1]  # the Column inside Container
-            self._think_col.controls.clear()
+            think_col = self.think_panel.content.content[1].content  # Column inside Container
+            think_col.controls.clear()
+            if last_think:
+                think_col.controls.append(ft.Text(last_think, size=13, selectable=True))
         self.page.update()
 
     def _build_msg_widget(self, m: Message):
