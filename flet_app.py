@@ -50,11 +50,10 @@ class RPDsApp:
                 ft.Container(expand=True, content=ft.Column([], scroll=ft.ScrollMode.AUTO)),
             ]),
         )
-        self._tab_chat = ft.TextButton("💬 Chat", on_click=lambda _: self._switch_tab("chat"))
-        self._tab_analysis = ft.TextButton("🧠 Analysis", on_click=lambda _: self._switch_tab("analysis"))
-        self._active_tab = "chat"
         self._page_container = ft.Container(expand=True)
-        self._drawer = None
+        self._msg_view_mode: dict[int, str] = {}
+        self._drawer_content = ft.Container(width=280, padding=10)
+        self.page.drawer = ft.NavigationDrawer(controls=[self._drawer_content])  # msg_id -> "chat" | "analysis"
 
         self._build_layout()
         self.refresh_conv_list()
@@ -115,46 +114,15 @@ class RPDsApp:
         return ft.Row([sidebar, ft.VerticalDivider(width=1), right_col], expand=True, spacing=0)
 
     def _build_mobile(self):
-        drawer_content = ft.Container(
-            width=280,
-            padding=10,
-            content=ft.Column([
-                ft.Text("RP DS", size=20, weight=ft.FontWeight.BOLD),
-                ft.Divider(height=1),
-                ft.Text("Conversations", size=12, color=ft.Colors.GREY),
-                self.conv_list_view,
-                ft.Divider(height=1),
-                ft.ElevatedButton("+ New", icon=ft.Icons.ADD, on_click=self.new_conversation, expand=True),
-                ft.Row([
-                    ft.OutlinedButton("Templates", icon=ft.Icons.DASHBOARD, on_click=self.manage_templates, expand=True),
-                ]),
-            ]),
-        )
-        msg_area = ft.Container(
-            expand=True,
-            padding=ft.padding.only(left=12, right=12, top=8),
-            content=self.msg_list_view,
-        )
-        think_area = ft.Container(
-            expand=True,
-            padding=ft.padding.only(left=12, right=12, top=8),
-            content=self.think_panel,
-        )
-        # Mobile: make think panel full width
-        if self._is_mobile():
-            self.think_panel.width = None
-        self._chat_content = ft.Container(expand=True, content=msg_area)
-        self._analysis_content = ft.Container(expand=True, content=think_area, visible=False)
-        tab_bar = ft.Row([
-            self._tab_chat,
-            ft.Container(width=1, height=20, bgcolor=ft.Colors.GREY),
-            self._tab_analysis,
-        ], alignment=ft.MainAxisAlignment.CENTER)
-
-        drawer = ft.NavigationDrawer(
-            controls=[drawer_content],
-        )
-        self.page.drawer = drawer
+        self._drawer_content.content = ft.Column([
+            ft.Text("RP DS", size=20, weight=ft.FontWeight.BOLD),
+            ft.Divider(height=1),
+            ft.Text("Conversations", size=12, color=ft.Colors.GREY),
+            self.conv_list_view,
+            ft.Divider(height=1),
+            ft.ElevatedButton("+ New", icon=ft.Icons.ADD, on_click=self.new_conversation, expand=True),
+            ft.OutlinedButton("Templates", icon=ft.Icons.DASHBOARD, on_click=self.manage_templates, expand=True),
+        ])
 
         def open_drawer(e):
             self.page.show_drawer()
@@ -166,11 +134,7 @@ class RPDsApp:
                 ft.Text("RP DS", size=18, weight=ft.FontWeight.BOLD, expand=True),
                 ft.IconButton(icon=ft.Icons.SETTINGS, on_click=self.open_settings),
             ]),
-            ft.Container(expand=True, content=ft.Stack([
-                self._chat_content,
-                self._analysis_content,
-            ])),
-            tab_bar,
+            ft.Container(expand=True, padding=ft.padding.only(left=12, right=12, top=8), content=self.msg_list_view),
             ft.Container(
                 padding=ft.padding.only(left=12, right=12, bottom=8, top=4),
                 content=ft.Row([self.input_field, ft.IconButton(icon=ft.Icons.SEND, on_click=self.on_send_click)]),
@@ -178,17 +142,12 @@ class RPDsApp:
         ], expand=True, spacing=0)
 
     def _switch_tab(self, tab: str):
-        self._active_tab = tab
         if tab == "chat":
             self._chat_content.visible = True
             self._analysis_content.visible = False
-            self._tab_chat.style = ft.ButtonStyle(bgcolor=ft.Colors.with_opacity(0.1, ft.Colors.PRIMARY))
-            self._tab_analysis.style = None
         else:
             self._chat_content.visible = False
             self._analysis_content.visible = True
-            self._tab_chat.style = None
-            self._tab_analysis.style = ft.ButtonStyle(bgcolor=ft.Colors.with_opacity(0.1, ft.Colors.PRIMARY))
         self.page.update()
 
     def refresh_conv_list(self):
@@ -246,7 +205,7 @@ class RPDsApp:
         if m.role == "user":
             return self._user_bubble(m.content)
         else:
-            return self._ai_bubble(m.content, m.think_content)
+            return self._ai_bubble(m.id, m.content, m.think_content)
 
     def _user_bubble(self, text: str):
         return ft.Container(
@@ -263,22 +222,58 @@ class RPDsApp:
             margin=ft.margin.only(left=80),
         )
 
-    def _ai_bubble(self, content: str, think: str = ""):
+    def _ai_bubble(self, msg_id: int, content: str, think: str = ""):
+        is_analysis = self.current_conv and self.current_conv.mode == "no_inner_os"
+        show_think = self._msg_view_mode.get(msg_id, "chat") == "analysis"
         cols = []
-        if self.current_conv and self.current_conv.mode == "inner_os" and think:
-            thoughts = self._parse_think(think)
-            for t in thoughts:
-                cols.append(ft.Text(t, size=12, italic=True, color=ft.Colors.GREY))
-        # parsed body
-        parts = self._parse_body(content)
-        for typ, seg in parts:
-            if typ == "action":
-                cols.append(ft.Text(f"\u300e{seg[1:-1]}\u300f", italic=True, color=ft.Colors.GREY_300, size=14))
-            else:
-                cols.append(ft.Text(seg, size=14, selectable=True))
+
+        if is_analysis:
+            # Per-message toggle row
+            def make_toggler(tab):
+                def onclick(e):
+                    self._msg_view_mode[msg_id] = tab
+                    # Rebuild this specific message
+                    idx = None
+                    for i, m in enumerate(self.messages):
+                        if m.id == msg_id:
+                            idx = i
+                            break
+                    if idx is not None:
+                        self.msg_list_view.controls[idx] = self._ai_bubble(msg_id, content, think)
+                        self.page.update()
+                return ft.TextButton(
+                    tab.capitalize(),
+                    on_click=onclick,
+                    style=ft.ButtonStyle(
+                        color=ft.Colors.PRIMARY if self._msg_view_mode.get(msg_id, "chat") == tab else ft.Colors.GREY,
+                    ),
+                )
+            cols.append(ft.Row([
+                ft.Text("AI", size=11, color=ft.Colors.GREEN, weight=ft.FontWeight.BOLD),
+                ft.Text("  |  ", size=11, color=ft.Colors.GREY),
+                make_toggler("chat"),
+                ft.Text("  ", size=11),
+                make_toggler("analysis"),
+            ]))
+
+        if show_think and think:
+            cols.append(ft.Text(think, size=13, selectable=True, color=ft.Colors.GREY_300))
+        elif not show_think:
+            # immersion mode: show think inline
+            if not is_analysis and think:
+                thoughts = self._parse_think(think)
+                for t in thoughts:
+                    cols.append(ft.Text(t, size=12, italic=True, color=ft.Colors.GREY))
+            # parsed body
+            parts = self._parse_body(content)
+            for typ, seg in parts:
+                if typ == "action":
+                    cols.append(ft.Text(f"\u300e{seg[1:-1]}\u300f", italic=True, color=ft.Colors.GREY_300, size=14))
+                else:
+                    cols.append(ft.Text(seg, size=14, selectable=True))
+
         return ft.Container(
             content=ft.Column([
-                ft.Text("AI", size=11, color=ft.Colors.GREEN, weight=ft.FontWeight.BOLD),
                 ft.Container(
                     content=ft.Column(cols, spacing=2),
                     bgcolor=ft.Colors.with_opacity(0.08, ft.Colors.PRIMARY),
@@ -416,7 +411,7 @@ class RPDsApp:
 
         # Re-render with full parsed body
         idx = self.msg_list_view.controls.index(bubble)
-        self.msg_list_view.controls[idx] = self._ai_bubble(ai_msg.content, ai_msg.think_content)
+        self.msg_list_view.controls[idx] = self._ai_bubble(ai_msg.id, ai_msg.content, ai_msg.think_content)
 
         # Update think panel for analysis mode
         if conv.mode == "no_inner_os" and ai_msg.think_content:
