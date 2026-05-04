@@ -127,7 +127,7 @@ class RPDsApp:
         self.current_conv = conv
         self.page.title = f"RP DS - {conv.name}"
         self.input_field.disabled = False
-        self.input_field.focus()
+        asyncio.create_task(self.input_field.focus())
         self.load_messages()
         self.refresh_conv_list()
 
@@ -146,7 +146,7 @@ class RPDsApp:
         show_think = self.current_conv.mode == "no_inner_os"
         self.think_panel.visible = show_think
         if show_think:
-            think_col = self.think_panel.content.content[1].content  # Column inside Container
+            think_col = self.think_panel.content.controls[1].content  # Column inside Container
             think_col.controls.clear()
             if last_think:
                 think_col.controls.append(ft.Text(last_think, size=13, selectable=True))
