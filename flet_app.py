@@ -288,7 +288,7 @@ class RPDsApp:
             content=ft.Column([
                 ft.Text("AI", size=11, color=ft.Colors.GREEN, weight=ft.FontWeight.BOLD),
                 ft.Container(
-                    content=ft.Column(cols, spacing=2, id="ai_content"),
+                    content=ft.Column(cols, spacing=2),
                     bgcolor=ft.Colors.with_opacity(0.08, ft.Colors.PRIMARY),
                     border_radius=ft.border_radius.only(top_left=4, top_right=16, bottom_left=16, bottom_right=16),
                     padding=12,
