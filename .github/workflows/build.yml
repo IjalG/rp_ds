@@ -85,7 +85,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.label }}
-          path: ${{ matrix.outdir }}/
+          path: ${{ matrix.outdir }}/**
+          if-no-files-found: error
 
   android:
     name: Android arm64
@@ -123,4 +124,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Android arm64 APK
-          path: dist/apk/
+          path: dist/apk/**
+          if-no-files-found: error
