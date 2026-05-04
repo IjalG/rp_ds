@@ -53,6 +53,7 @@ class RPDsApp:
 
         self.build_layout()
         self.refresh_conv_list()
+        self._apply_theme()
 
         page.on_keyboard_event = self.on_keyboard
 
@@ -456,13 +457,26 @@ class RPDsApp:
         key_field = ft.TextField(label="API Key", password=True, value=get_setting("api_key"), width=400)
         base_field = ft.TextField(label="API Base URL", value=get_setting("api_base", "https://api.deepseek.com/v1"), width=400)
         model_field = ft.TextField(label="Model", value=get_setting("model", "deepseek-v4-flash"), width=400)
+        current_theme = get_setting("theme", "dark")
+        theme_dd = ft.Dropdown(
+            label="Theme",
+            options=[
+                ft.dropdown.Option("dark", "Dark"),
+                ft.dropdown.Option("light", "Light"),
+                ft.dropdown.Option("system", "Follow System"),
+            ],
+            value=current_theme,
+            width=400,
+        )
 
         def save_click(e):
             set_setting("api_key", key_field.value)
             set_setting("api_base", base_field.value)
             set_setting("model", model_field.value)
+            set_setting("theme", theme_dd.value or "dark")
             dlg.open = False
             self.page.update()
+            self._apply_theme()
             _ = ft.SnackBar(ft.Text("Settings saved"), bgcolor=ft.Colors.GREEN); self.page.show_dialog(_)
 
         dlg = ft.AlertDialog(
@@ -471,7 +485,8 @@ class RPDsApp:
                 key_field,
                 base_field,
                 model_field,
-            ], width=450, height=280, scroll=ft.ScrollMode.AUTO),
+                theme_dd,
+            ], width=450, height=350, scroll=ft.ScrollMode.AUTO),
             actions=[
                 ft.TextButton("Cancel", on_click=lambda e: setattr(dlg, 'open', False) or self.page.update()),
                 ft.FilledButton("Save", on_click=save_click),
@@ -495,6 +510,12 @@ class RPDsApp:
             self.regenerate()
         elif e.key == "Escape":
             self.back_to_list()
+
+    def _apply_theme(self):
+        mode = get_setting("theme", "dark")
+        theme_map = {"dark": ft.ThemeMode.DARK, "light": ft.ThemeMode.LIGHT, "system": ft.ThemeMode.SYSTEM}
+        self.page.theme_mode = theme_map.get(mode, ft.ThemeMode.DARK)
+        self.page.update()
 
     def delete_current_conv(self):
         if not self.current_conv:
