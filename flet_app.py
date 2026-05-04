@@ -256,7 +256,7 @@ class RPDsApp:
             ]))
 
         if show_think and think:
-            cols.append(ft.Text(think, size=13, selectable=True, color=ft.Colors.GREY_300))
+            cols.append(ft.Text(think, size=13, selectable=True, color=ft.Colors.GREY))
         elif not show_think:
             # immersion mode: show think inline
             if not is_analysis and think:
@@ -267,7 +267,7 @@ class RPDsApp:
             parts = self._parse_body(content)
             for typ, seg in parts:
                 if typ == "action":
-                    cols.append(ft.Text(f"\u300e{seg[1:-1]}\u300f", italic=True, color=ft.Colors.GREY_300, size=14))
+                    cols.append(ft.Text(f"\u300e{seg[1:-1]}\u300f", italic=True, color=ft.Colors.GREY, size=14))
                 else:
                     cols.append(ft.Text(seg, size=14, selectable=True))
 
