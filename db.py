@@ -1,10 +1,20 @@
 import sqlite3
 import os
+import sys
 from datetime import datetime
 from typing import Optional
 from models import Template, Conversation, Message
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "data.db")
+
+def _data_dir() -> str:
+    if getattr(sys, "frozen", False):
+        base = os.path.dirname(sys.executable)
+    else:
+        base = os.path.dirname(os.path.abspath(__file__))
+    return base
+
+
+DB_PATH = os.path.join(_data_dir(), "data.db")
 
 
 def get_conn():
