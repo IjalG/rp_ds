@@ -147,12 +147,13 @@ class RPDsApp:
             self._tab_analysis,
         ], alignment=ft.MainAxisAlignment.CENTER)
 
+        drawer = ft.NavigationDrawer(
+            controls=[drawer_content],
+        )
+        self.page.drawer = drawer
+
         def open_drawer(e):
-            d = ft.NavigationDrawer(
-                controls=[drawer_content],
-                on_dismiss=lambda _: None,
-            )
-            self.page.open(d)
+            self.page.show_drawer()
             self.page.update()
 
         return ft.Column([
