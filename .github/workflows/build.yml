@@ -19,27 +19,22 @@ jobs:
             label: Linux amd64
             deps: sudo apt-get update && sudo apt-get install -y libgtk-3-dev liblzma-dev
             build: flet build linux --project rp_ds --module-name main_flet --output dist --yes
-            outdir: dist/linux
           - os: ubuntu-24.04-arm
             label: Linux arm64
             deps: sudo apt-get update && sudo apt-get install -y libgtk-3-dev liblzma-dev
             build: flet build linux --project rp_ds --module-name main_flet --output dist --yes
-            outdir: dist/linux
           - os: windows-latest
             label: Windows amd64
             deps: ""
             build: flet build windows --project rp_ds --module-name main_flet --output dist --yes
-            outdir: dist/windows
           - os: macos-13
             label: macOS amd64
             deps: ""
             build: flet build macos --project rp_ds --module-name main_flet --arch x64 --output dist --yes
-            outdir: dist/macos
           - os: macos-latest
             label: macOS arm64
             deps: ""
             build: flet build macos --project rp_ds --module-name main_flet --arch arm64 --output dist --yes
-            outdir: dist/macos
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -74,18 +69,16 @@ jobs:
       - name: List output
         shell: bash
         run: |
-          echo "=== dist/ ==="
-          find dist -type f -o -type d 2>/dev/null | head -30 || echo "(no dist/)"
-          echo "=== build/ ==="
-          find build -type f -o -type d 2>/dev/null | head -30 || echo "(no build/)"
-          echo "=== . ==="
-          ls -la
+          echo "=== dist/ (all) ==="
+          find dist -maxdepth 3 2>/dev/null || echo "(no dist/)"
+          echo "=== build/ (all) ==="
+          find build -maxdepth 2 -type d 2>/dev/null || echo "(no build/)"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.label }}
-          path: ${{ matrix.outdir }}/**
+          path: dist/
           if-no-files-found: error
 
   android:
