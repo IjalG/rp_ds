@@ -169,7 +169,7 @@ class RPDsApp:
                     padding=12,
                 ),
             ]),
-            alignment=ft.alignment.center_right,
+            alignment=ft.Alignment(1, 0),
             margin=ft.margin.only(left=80),
         )
 
@@ -196,7 +196,7 @@ class RPDsApp:
                     padding=12,
                 ),
             ]),
-            alignment=ft.alignment.center_left,
+            alignment=ft.Alignment(-1, 0),
             margin=ft.margin.only(right=80),
         )
 
@@ -294,7 +294,7 @@ class RPDsApp:
                     padding=12,
                 ),
             ]),
-            alignment=ft.alignment.center_left,
+            alignment=ft.Alignment(-1, 0),
             margin=ft.margin.only(right=80),
         )
         self.msg_list_view.controls.append(bubble)
