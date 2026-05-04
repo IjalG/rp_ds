@@ -24,7 +24,6 @@ jobs:
           - os: ubuntu-24.04-arm
             label: Linux arm64
             deps: sudo apt-get update && sudo apt-get install -y libgtk-3-dev liblzma-dev
-            flutter: subosito/flutter-action@v2
             build: flet build linux --project rp_ds --module-name main_flet --output dist --yes
             outdir: dist/linux
           - os: windows-latest
@@ -61,8 +60,8 @@ jobs:
         run: ${{ matrix.deps }}
 
       - name: Setup Flutter (arm64)
-        if: ${{ matrix.flutter != '' }}
-        uses: ${{ matrix.flutter }}
+        if: matrix.label == 'Linux arm64'
+        uses: subosito/flutter-action@v2
         with:
           flutter-version: 3.41.x
 
