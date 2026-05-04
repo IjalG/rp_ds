@@ -50,14 +50,34 @@ class RPDsApp:
                 ft.Container(expand=True, content=ft.Column([], scroll=ft.ScrollMode.AUTO)),
             ]),
         )
+        self._tab_chat = ft.TextButton("💬 Chat", on_click=lambda _: self._switch_tab("chat"))
+        self._tab_analysis = ft.TextButton("🧠 Analysis", on_click=lambda _: self._switch_tab("analysis"))
+        self._active_tab = "chat"
+        self._page_container = ft.Container(expand=True)
+        self._drawer = None
 
-        self.build_layout()
+        self._build_layout()
         self.refresh_conv_list()
         self._apply_theme()
 
+        page.on_resize = self._on_resize
         page.on_keyboard_event = self.on_keyboard
 
-    def build_layout(self):
+    def _is_mobile(self):
+        return self.page.width <= 768
+
+    def _build_layout(self):
+        self._page_container.content = self._build_mobile() if self._is_mobile() else self._build_desktop()
+        if self.page.controls:
+            self.page.controls[0] = self._page_container
+        else:
+            self.page.add(self._page_container)
+        self.page.update()
+
+    def _on_resize(self, e=None):
+        self._build_layout()
+
+    def _build_desktop(self):
         sidebar = ft.Container(
             width=240,
             bgcolor=ft.Colors.with_opacity(0.03, ft.Colors.PRIMARY),
@@ -77,30 +97,94 @@ class RPDsApp:
                 ]),
             ]),
         )
-
         msg_area = ft.Container(
             expand=True,
             padding=ft.padding.only(left=20, right=20, top=10),
-            content=ft.Column([
-                self.msg_list_view,
-            ]),
+            content=ft.Column([self.msg_list_view]),
             bgcolor=ft.Colors.with_opacity(0.01, ft.Colors.SURFACE),
         )
-
         input_row = ft.Container(
             padding=ft.padding.only(left=20, right=20, bottom=10, top=5),
-            content=ft.Row([
-                self.input_field,
-                ft.IconButton(icon=ft.Icons.SEND, on_click=self.on_send_click),
-            ]),
+            content=ft.Row([self.input_field, ft.IconButton(icon=ft.Icons.SEND, on_click=self.on_send_click)]),
         )
-
         right_col = ft.Column([
             ft.Row([msg_area, self.think_panel], expand=True),
             input_row,
         ], expand=True, spacing=0)
+        return ft.Row([sidebar, ft.VerticalDivider(width=1), right_col], expand=True, spacing=0)
 
-        self.page.add(ft.Row([sidebar, ft.VerticalDivider(width=1), right_col], expand=True, spacing=0))
+    def _build_mobile(self):
+        drawer_content = ft.Container(
+            width=280,
+            padding=10,
+            content=ft.Column([
+                ft.Text("RP DS", size=20, weight=ft.FontWeight.BOLD),
+                ft.Divider(height=1),
+                ft.Text("Conversations", size=12, color=ft.Colors.GREY),
+                self.conv_list_view,
+                ft.Divider(height=1),
+                ft.ElevatedButton("+ New", icon=ft.Icons.ADD, on_click=self.new_conversation, expand=True),
+                ft.Row([
+                    ft.OutlinedButton("Templates", icon=ft.Icons.DASHBOARD, on_click=self.manage_templates, expand=True),
+                ]),
+            ]),
+        )
+        msg_area = ft.Container(
+            expand=True,
+            padding=ft.padding.only(left=12, right=12, top=8),
+            content=self.msg_list_view,
+        )
+        think_area = ft.Container(
+            expand=True,
+            padding=ft.padding.only(left=12, right=12, top=8),
+            content=self.think_panel,
+        )
+        self._chat_content = ft.Container(expand=True, content=msg_area)
+        self._analysis_content = ft.Container(expand=True, content=think_area, visible=False)
+        tab_bar = ft.Row([
+            self._tab_chat,
+            ft.Container(width=1, height=20, bgcolor=ft.Colors.GREY),
+            self._tab_analysis,
+        ], alignment=ft.MainAxisAlignment.CENTER)
+
+        def open_drawer(e):
+            d = ft.NavigationDrawer(
+                controls=[drawer_content],
+                on_dismiss=lambda _: None,
+            )
+            self.page.open(d)
+            self.page.update()
+
+        return ft.Column([
+            ft.Row([
+                ft.IconButton(icon=ft.Icons.MENU, on_click=open_drawer),
+                ft.Text("RP DS", size=18, weight=ft.FontWeight.BOLD, expand=True),
+                ft.IconButton(icon=ft.Icons.SETTINGS, on_click=self.open_settings),
+            ]),
+            ft.Container(expand=True, content=ft.Stack([
+                self._chat_content,
+                self._analysis_content,
+            ])),
+            tab_bar,
+            ft.Container(
+                padding=ft.padding.only(left=12, right=12, bottom=8, top=4),
+                content=ft.Row([self.input_field, ft.IconButton(icon=ft.Icons.SEND, on_click=self.on_send_click)]),
+            ),
+        ], expand=True, spacing=0)
+
+    def _switch_tab(self, tab: str):
+        self._active_tab = tab
+        if tab == "chat":
+            self._chat_content.visible = True
+            self._analysis_content.visible = False
+            self._tab_chat.style = ft.ButtonStyle(bgcolor=ft.Colors.with_opacity(0.1, ft.Colors.PRIMARY))
+            self._tab_analysis.style = None
+        else:
+            self._chat_content.visible = False
+            self._analysis_content.visible = True
+            self._tab_chat.style = None
+            self._tab_analysis.style = ft.ButtonStyle(bgcolor=ft.Colors.with_opacity(0.1, ft.Colors.PRIMARY))
+        self.page.update()
 
     def refresh_conv_list(self):
         self.conv_list_view.controls.clear()
