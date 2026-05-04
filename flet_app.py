@@ -54,7 +54,7 @@ class RPDsApp:
         self.build_layout()
         self.refresh_conv_list()
 
-        page.on_keyboard = self.on_keyboard
+        page.on_keyboard_event = self.on_keyboard
 
     def build_layout(self):
         sidebar = ft.Container(
@@ -247,7 +247,7 @@ class RPDsApp:
             await self._stream_from_user(user_msg)
         except Exception as e:
             self._streaming = False
-            self.page.open(ft.SnackBar(ft.Text(str(e)), bgcolor=ft.Colors.RED))
+            _ = ft.SnackBar(ft.Text(str(e)), bgcolor=ft.Colors.RED); self.page.show_dialog(_)
             self.page.update()
 
     async def _stream_from_user(self, user_msg: Message):
@@ -255,7 +255,7 @@ class RPDsApp:
         api_key = get_setting("api_key")
         if not api_key:
             self._streaming = False
-            self.page.open(ft.SnackBar(ft.Text("API key not set"), bgcolor=ft.Colors.RED))
+            _ = ft.SnackBar(ft.Text("API key not set"), bgcolor=ft.Colors.RED); self.page.show_dialog(_)
             self.page.update()
             return
 
@@ -319,7 +319,7 @@ class RPDsApp:
         try:
             await stream_chat(api_key, api_msgs, on_content, on_think)
         except Exception as e:
-            self.page.open(ft.SnackBar(ft.Text(str(e)), bgcolor=ft.Colors.RED))
+            _ = ft.SnackBar(ft.Text(str(e)), bgcolor=ft.Colors.RED); self.page.show_dialog(_)
 
         self._streaming = False
         save_message(ai_msg)
@@ -373,7 +373,7 @@ class RPDsApp:
                 ft.FilledButton("Create", on_click=create_click),
             ],
         )
-        self.page.open(dlg)
+        self.page.show_dialog(dlg)
         self.page.update()
 
     def manage_templates(self, e=None):
@@ -411,7 +411,7 @@ class RPDsApp:
                 ft.TextButton("Close", on_click=lambda e: [setattr(dlg, 'open', False), self.page.update()]),
             ],
         )
-        self.page.open(dlg)
+        self.page.show_dialog(dlg)
         self.page.update()
 
     def _template_form(self, template=None):
@@ -441,7 +441,7 @@ class RPDsApp:
                 ft.FilledButton("Save", on_click=save_click),
             ],
         )
-        self.page.open(dlg)
+        self.page.show_dialog(dlg)
         self.page.update()
 
     def open_settings(self, e=None):
@@ -455,7 +455,7 @@ class RPDsApp:
             set_setting("model", model_field.value)
             dlg.open = False
             self.page.update()
-            self.page.open(ft.SnackBar(ft.Text("Settings saved"), bgcolor=ft.Colors.GREEN))
+            _ = ft.SnackBar(ft.Text("Settings saved"), bgcolor=ft.Colors.GREEN); self.page.show_dialog(_)
 
         dlg = ft.AlertDialog(
             title=ft.Text("Settings"),
@@ -469,10 +469,12 @@ class RPDsApp:
                 ft.FilledButton("Save", on_click=save_click),
             ],
         )
-        self.page.open(dlg)
+        self.page.show_dialog(dlg)
         self.page.update()
 
     def on_keyboard(self, e: ft.KeyboardEvent):
+        if self.input_field.focus:
+            return
         if e.ctrl and e.key == "N":
             self.new_conversation()
         elif e.ctrl and e.key == "T":
