@@ -78,6 +78,7 @@ class RPDsApp:
         self._build_layout()
 
     def _build_desktop(self):
+        self.think_panel.width = 300
         sidebar = ft.Container(
             width=240,
             bgcolor=ft.Colors.with_opacity(0.03, ft.Colors.PRIMARY),
@@ -139,6 +140,9 @@ class RPDsApp:
             padding=ft.padding.only(left=12, right=12, top=8),
             content=self.think_panel,
         )
+        # Mobile: make think panel full width
+        if self._is_mobile():
+            self.think_panel.width = None
         self._chat_content = ft.Container(expand=True, content=msg_area)
         self._analysis_content = ft.Container(expand=True, content=think_area, visible=False)
         tab_bar = ft.Row([
