@@ -164,7 +164,7 @@ class RPDsApp:
             content=ft.Column([
                 ft.Text("You", size=11, color=ft.Colors.BLUE, weight=ft.FontWeight.BOLD),
                 ft.Container(
-                    content=ft.Text(text, size=14, selectable=True),
+                    content=ft.Text(text, size=14, selectable=True, color=ft.Colors.WHITE),
                     bgcolor=ft.Colors.BLUE_900,
                     border_radius=ft.border_radius.only(top_left=16, top_right=4, bottom_left=16, bottom_right=16),
                     padding=12,
@@ -457,7 +457,7 @@ class RPDsApp:
         key_field = ft.TextField(label="API Key", password=True, value=get_setting("api_key"), width=400)
         base_field = ft.TextField(label="API Base URL", value=get_setting("api_base", "https://api.deepseek.com/v1"), width=400)
         model_field = ft.TextField(label="Model", value=get_setting("model", "deepseek-v4-flash"), width=400)
-        current_theme = get_setting("theme", "dark")
+        current_theme = get_setting("theme", "system")
         theme_dd = ft.Dropdown(
             label="Theme",
             options=[
@@ -512,7 +512,7 @@ class RPDsApp:
             self.back_to_list()
 
     def _apply_theme(self):
-        mode = get_setting("theme", "dark")
+        mode = get_setting("theme", "system")
         theme_map = {"dark": ft.ThemeMode.DARK, "light": ft.ThemeMode.LIGHT, "system": ft.ThemeMode.SYSTEM}
         self.page.theme_mode = theme_map.get(mode, ft.ThemeMode.DARK)
         self.page.update()
