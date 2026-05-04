@@ -327,6 +327,14 @@ class RPDsApp:
         # Re-render with full parsed body
         idx = self.msg_list_view.controls.index(bubble)
         self.msg_list_view.controls[idx] = self._ai_bubble(ai_msg.content, ai_msg.think_content)
+
+        # Update think panel for analysis mode
+        if conv.mode == "no_inner_os" and ai_msg.think_content:
+            think_col = self.think_panel.content.controls[1].content
+            think_col.controls.clear()
+            think_col.controls.append(ft.Text(ai_msg.think_content, size=13, selectable=True))
+            self.think_panel.visible = True
+
         self.page.update()
 
     # ---- Actions ----
