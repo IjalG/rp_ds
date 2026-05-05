@@ -113,9 +113,13 @@ jobs:
       - name: Build APK
         run: flet build apk --project rp_ds --module-name main_flet --output dist --yes
 
+      - name: List output
+        shell: bash
+        run: find dist -maxdepth 3 2>/dev/null || echo "(no dist/)"
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Android arm64 APK
-          path: dist/apk/**
+          path: dist/
           if-no-files-found: error
